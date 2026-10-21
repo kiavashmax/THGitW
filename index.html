@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The Hardest Game</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    background: #111;
+    color: #eee;
+    font-family: Tahoma, Arial, sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .head {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    padding: 18px;
+    text-align: center;
+    z-index: 2;
+    pointer-events: none;
+  }
+  h1 { font-size: 19px; font-weight: normal; margin: 0 0 4px; }
+  p { margin: 0; font-size: 13px; color: #888; }
+  #btn {
+    position: fixed;
+    top: 40%;
+    left: 40%;
+    padding: 14px 38px;
+    font: inherit;
+    font-size: 17px;
+    background: #e53935;
+    color: #fff;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: top 0.22s ease, left 0.22s ease;
+    z-index: 10;
+    white-space: nowrap;
+  }
+  #tries {
+    position: fixed;
+    bottom: 14px;
+    left: 14px;
+    font-size: 13px;
+    color: #555;
+    z-index: 2;
+  }
+  #lang {
+    position: fixed;
+    bottom: 14px;
+    right: 14px;
+    background: #222;
+    color: #eee;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 5px 7px;
+    font-size: 20px;
+    z-index: 2;
+  }
+  #taunt {
+    position: fixed;
+    bottom: 55px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 14px;
+    color: #e53935;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 2;
+    text-align: center;
+    white-space: nowrap;
+    padding: 0 16px;
+  }
+  #taunt.on { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="head">
+  <h1 id="title"></h1>
+  <p id="sub"></p>
+</div>
+
+<button id="btn"></button>
+<div id="taunt"></div>
+<div id="tries">0</div>
+<select id="lang"></select>
+
+<script>
+var RTL = ['fa', 'ar', 'ur', 'he'];
+
+var FLAG = {
+  fa: '\uD83C\uDDEE\uD83C\uDDF7',
+  en: '\uD83C\uDDEC\uD83C\uDDE7',
+  ar: '\uD83C\uDDF8\uD83C\uDDE6',
+  tr: '\uD83C\uDDF9\uD83C\uDDF7',
+  es: '\uD83C\uDDEA\uD83C\uDDF8',
+  fr: '\uD83C\uDDEB\uD83C\uDDF7',
+  de: '\uD83C\uDDE9\uD83C\uDDEA',
+  it: '\uD83C\uDDEE\uD83C\uDDF9',
+  pt: '\uD83C\uDDF5\uD83C\uDDF9',
+  ru: '\uD83C\uDDF7\uD83C\uDDFA',
+  zh: '\uD83C\uDDE8\uD83C\uDDF3',
+  ja: '\uD83C\uDDEF\uD83C\uDDF5',
+  ko: '\uD83C\uDDF0\uD83C\uDDF7',
+  hi: '\uD83C\uDDEE\uD83C\uDDF3',
+  ur: '\uD83C\uDDF5\uD83C\uDDF0',
+  id: '\uD83C\uDDEE\uD83C\uDDE9',
+  ms: '\uD83C\uDDF2\uD83C\uDDFE',
+  th: '\uD83C\uDDF9\uD83C\uDDED',
+  vi: '\uD83C\uDDFB\uD83C\uDDF3',
+  pl: '\uD83C\uDDF5\uD83C\uDDF1',
+  nl: '\uD83C\uDDF3\uD83C\uDDF1',
+  sv: '\uD83C\uDDF8\uD83C\uDDEA',
+  no: '\uD83C\uDDF3\uD83C\uDDF4',
+  da: '\uD83C\uDDE9\uD83C\uDDF0',
+  fi: '\uD83C\uDDEB\uD83C\uDDEE',
+  el: '\uD83C\uDDEC\uD83C\uDDF7',
+  he: '\uD83C\uDDEE\uD83C\uDDF1',
+  uk: '\uD83C\uDDFA\uD83C\uDDE6',
+  cs: '\uD83C\uDDE8\uD83C\uDDFF',
+  ro: '\uD83C\uDDF7\uD83C\uDDF4'
+};
+
+var L = {
+  fa: { t: 'سخت‌ترین بازی دنیا', s: 'دکمه رو بزن. اگر تونستی.', b: 'برد!', g: 'موفق نمی‌شی. بی‌خیال شو.' },
+  en: { t: 'The Hardest Game', s: 'Press the button. If you can.', b: 'Win!', g: "You can't win. Give up." },
+  ar: { t: 'أصعب لعبة', s: 'اضغط الزر. إن استطعت.', b: 'فوز!', g: 'لن تفوز. استسلم.' },
+  tr: { t: 'Dünyanın En Zor Oyunu', s: 'Butona bas. Eğer yapabilirsen.', b: 'Kazan!', g: 'Kazanamazsın. Vazgeç.' },
+  es: { t: 'El Juego Más Difícil', s: 'Pulsa el botón. Si puedes.', b: '¡Ganar!', g: 'No puedes ganar. Ríndete.' },
+  fr: { t: 'Le Jeu le Plus Dur', s: 'Appuie sur le bouton. Si tu peux.', b: 'Gagner !', g: 'Tu ne peux pas gagner. Abandonne.' },
+  de: { t: 'Das Schwierigste Spiel', s: 'Drück den Knopf. Wenn du kannst.', b: 'Gewinnen!', g: 'Du kannst nicht gewinnen. Gib auf.' },
+  it: { t: 'Il Gioco Più Difficile', s: 'Premi il bottone. Se ci riesci.', b: 'Vinci!', g: 'Non puoi vincere. Arrenditi.' },
+  pt: { t: 'O Jogo Mais Difícil', s: 'Aperte o botão. Se conseguir.', b: 'Vencer!', g: 'Você não pode vencer. Desista.' },
+  ru: { t: 'Самая Сложная Игра', s: 'Нажми кнопку. Если сможешь.', b: 'Победить!', g: 'Ты не выиграешь. Сдавайся.' },
+  zh: { t: '世界上最难的游戲', s: '按下按钮。如果你能的话。', b: '赢！', g: '你赢不了。放弃吧。' },
+  ja: { t: '世界一難しいゲーム', s: 'ボタンを押して。できれば。', b: '勝つ！', g: '勝てないよ。諦めて。' },
+  ko: { t: '세상에서 가장 어려운 게임', s: '버튼을 눌러봐. 할 수 있으면.', b: '이기기!', g: '이길 수 없어. 포기해.' },
+  hi: { t: 'दुनिया का सबसे कठिन खेल', s: 'बटन दबाओ। अगर कर सको।', b: 'जीतो!', g: 'तुम जीत नहीं सकते। हार मानो।' },
+  ur: { t: 'دنیا کا سب سے مشکل کھیل', s: 'بٹن دبائیں۔ اگر کر سکیں۔', b: 'جیتیں!', g: 'تم نہیں جیت سکتے۔ ہار مان لو۔' },
+  id: { t: 'Game Tersulit di Dunia', s: 'Tekan tombolnya. Kalau bisa.', b: 'Menang!', g: 'Kamu tidak bisa menang. Menyerah saja.' },
+  ms: { t: 'Permainan Paling Susah', s: 'Tekan butang. Kalau boleh.', b: 'Menang!', g: 'Awak tak boleh menang. Mengalah.' },
+  th: { t: 'เกมที่ยากที่สุดในโลก', s: 'กดปุ่ม ถ้าทำได้', b: 'ชนะ!', g: 'คุณชนะไม่ได้ ยอมแพ้เถอะ' },
+  vi: { t: 'Trò Chơi Khó Nhất', s: 'Nhấn nút. Nếu có thể.', b: 'Thắng!', g: 'Bạn không thể thắng. Bỏ cuộc đi.' },
+  pl: { t: 'Najtrudniejsza Gra Świata', s: 'Naciśnij przycisk. Jeśli potrafisz.', b: 'Wygraj!', g: 'Nie wygrasz. Poddaj się.' },
+  nl: { t: 'Het Moeilijkste Spel', s: 'Druk op de knop. Als je kan.', b: 'Winnen!', g: 'Je kunt niet winnen. Geef op.' },
+  sv: { t: 'Världens Svåraste Spel', s: 'Tryck på knappen. Om du kan.', b: 'Vinn!', g: 'Du kan inte vinna. Ge upp.' },
+  no: { t: 'Verdens Vanskeligste Spill', s: 'Trykk på knappen. Hvis du kan.', b: 'Vinn!', g: 'Du kan ikke vinne. Gi opp.' },
+  da: { t: 'Verdens Sværeste Spil', s: 'Tryk på knappen. Hvis du kan.', b: 'Vind!', g: 'Du kan ikke vinde. Giv op.' },
+  fi: { t: 'Maailman Vaikein Peli', s: 'Paina nappia. Jos pystyt.', b: 'Voita!', g: 'Et voi voittaa. Luovuta.' },
+  el: { t: 'Το Πιο Δύσκολο Παιχνίδι', s: 'Πάτα το κουμπί. Αν μπορείς.', b: 'Νίκη!', g: 'Δεν μπορείς να κερδίσεις. Παραιτήσου.' },
+  he: { t: 'המשחק הקשה בעולם', s: 'לחץ על הכפתור. אם אתה יכול.', b: 'נצח!', g: 'אתה לא יכול לנצח. תוותר.' },
+  uk: { t: 'Найскладніша Гра у Світі', s: 'Натисни кнопку. Якщо зможеш.', b: 'Перемогти!', g: 'Ти не переможеш. Здавайся.' },
+  cs: { t: 'Nejnáročnější Hra na Světě', s: 'Stiskni tlačítko. Jestli můžeš.', b: 'Vyhrát!', g: 'Nemůžeš vyhrát. Vzdej to.' },
+  ro: { t: 'Cel Mai Greu Joc din Lume', s: 'Apasă butonul. Dacă poți.', b: 'Câștigă!', g: 'Nu poți câștiga. Renunță.' }
+};
+
+var btn = document.getElementById('btn');
+var taunt = document.getElementById('taunt');
+var triesEl = document.getElementById('tries');
+var langSel = document.getElementById('lang');
+var titleEl = document.getElementById('title');
+var subEl = document.getElementById('sub');
+
+var lang = 'fa';
+var tries = 0;
+var cooldown = 0;
+var hideTaunt = null;
+
+var codes = Object.keys(L);
+for (var i = 0; i < codes.length; i++) {
+  var o = document.createElement('option');
+  o.value = codes[i];
+  o.textContent = FLAG[codes[i]] || '';
+  langSel.appendChild(o);
+}
+
+function apply(l) {
+  if (!L[l]) l = 'en';
+  lang = l;
+  var s = L[l];
+  document.documentElement.lang = l;
+  document.documentElement.dir = RTL.indexOf(l) >= 0 ? 'rtl' : 'ltr';
+  document.title = s.t;
+  titleEl.textContent = s.t;
+  subEl.textContent = s.s;
+  btn.textContent = s.b;
+  langSel.value = l;
+}
+
+function place(mx, my) {
+  var pad = 40;
+  var w = btn.offsetWidth || 90;
+  var h = btn.offsetHeight || 44;
+  var maxX = window.innerWidth - w - pad;
+  var maxY = window.innerHeight - h - pad;
+  var x, y, n = 0;
+  do {
+    x = pad + Math.random() * (maxX - pad);
+    y = pad + Math.random() * (maxY - pad);
+    n++;
+  } while (
+    mx !== undefined &&
+    Math.sqrt((x - mx) * (x - mx) + (y - my) * (y - my)) < 200 &&
+    n < 25
+  );
+  btn.style.left = x + 'px';
+  btn.style.top = y + 'px';
+}
+
+function run(mx, my) {
+  var now = Date.now();
+  if (now - cooldown < 180) return;
+  cooldown = now;
+  tries++;
+  triesEl.textContent = tries;
+  taunt.textContent = L[lang].g;
+  taunt.className = 'on';
+  clearTimeout(hideTaunt);
+  hideTaunt = setTimeout(function () { taunt.className = ''; }, 1100);
+  place(mx, my);
+}
+
+document.addEventListener('mousemove', function (e) {
+  var r = btn.getBoundingClientRect();
+  var cx = r.left + r.width / 2;
+  var cy = r.top + r.height / 2;
+  var dx = e.clientX - cx;
+  var dy = e.clientY - cy;
+  if (dx * dx + dy * dy < 10000) run(e.clientX, e.clientY);
+});
+
+document.addEventListener('touchmove', function (e) {
+  var t = e.touches[0];
+  if (!t) return;
+  var r = btn.getBoundingClientRect();
+  var cx = r.left + r.width / 2;
+  var cy = r.top + r.height / 2;
+  var dx = t.clientX - cx;
+  var dy = t.clientY - cy;
+  if (dx * dx + dy * dy < 14400) run(t.clientX, t.clientY);
+}, { passive: true });
+
+btn.addEventListener('click', function (e) {
+  e.preventDefault();
+  run(e.clientX, e.clientY);
+});
+
+btn.addEventListener('touchstart', function (e) {
+  e.preventDefault();
+  var t = e.touches[0];
+  if (t) run(t.clientX, t.clientY);
+}, { passive: false });
+
+langSel.onchange = function () {
+  apply(langSel.value);
+  tries = 0;
+  triesEl.textContent = '0';
+  place();
+};
+
+var nav = (navigator.language || 'en').toLowerCase().substring(0, 2);
+apply(L[nav] ? nav : 'fa');
+place();
+</script>
+</body>
+</html>
